@@ -18,18 +18,20 @@ async function connectRedis() {
   }
 
   redisClient = new Redis(process.env.REDIS_URL, {
-    tls: { rejectUnauthorized: false },
     maxRetriesPerRequest: null,
     enableReadyCheck: false,
+    tls: process.env.REDIS_URL.startsWith("rediss://") ? {} : undefined,
   });
 
   redisClient.on("connect", () => logger.info("✅ Redis connected"));
-  redisClient.on("error", (err) => logger.error("❌ Redis error:", err));
+  redisClient.on("ready", () => logger.info("🚀 Redis ready"));
+  redisClient.on("error", (err) => logger.error("❌ Redis error:", err.message));
   redisClient.on("reconnecting", () => logger.info("🔄 Redis reconnecting…"));
 
   await redisClient.ping();
   return redisClient;
 }
+
 
 
 
