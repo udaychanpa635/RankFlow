@@ -13,25 +13,24 @@ const KEYS = {
 };
 
 async function connectRedis() {
-  const redisUrl = process.env.REDIS_URL;
-
-  if (!redisUrl) {
-    throw new Error("REDIS_URL not found in environment variables");
+  if (!process.env.REDIS_URL) {
+    throw new Error("REDIS_URL is missing in environment variables");
   }
 
-  redisClient = new Redis(redisUrl, {
-    tls: {},                     // ⭐ required for Railway Redis
+  redisClient = new Redis(process.env.REDIS_URL, {
+    tls: { rejectUnauthorized: false },
     maxRetriesPerRequest: null,
     enableReadyCheck: false,
   });
 
-  redisClient.on('connect', () => logger.info('✅ Redis connected'));
-  redisClient.on('error', (e) => logger.error('Redis error:', e.message));
-  redisClient.on('reconnecting', () => logger.info('🔄 Redis reconnecting…'));
+  redisClient.on("connect", () => logger.info("✅ Redis connected"));
+  redisClient.on("error", (err) => logger.error("❌ Redis error:", err));
+  redisClient.on("reconnecting", () => logger.info("🔄 Redis reconnecting…"));
 
   await redisClient.ping();
   return redisClient;
 }
+
 
 
 function getRedisClient() {
