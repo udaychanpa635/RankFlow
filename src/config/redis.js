@@ -13,24 +13,26 @@ const KEYS = {
 };
 
 async function connectRedis() {
-  redisClient = new Redis({
-    host:     process.env.REDIS_HOST || 'localhost',
-    port:     parseInt(process.env.REDIS_PORT) || 6379,
-    password: process.env.REDIS_PASSWORD || undefined,
-    maxRetriesPerRequest: 3,
-    enableReadyCheck: true,
-    lazyConnect: true,
-    retryStrategy: (times) => Math.min(times * 50, 2000),
+  const redisUrl = process.env.REDIS_URL;
+
+  if (!redisUrl) {
+    throw new Error("REDIS_URL not found in environment variables");
+  }
+
+  redisClient = new Redis(redisUrl, {
+    tls: {},                     // ⭐ required for Railway Redis
+    maxRetriesPerRequest: null,
+    enableReadyCheck: false,
   });
 
-  redisClient.on('ready',        () => logger.info('✅ Redis connected'));
-  redisClient.on('error',   (e) => logger.error('Redis error:', e.message));
+  redisClient.on('connect', () => logger.info('✅ Redis connected'));
+  redisClient.on('error', (e) => logger.error('Redis error:', e.message));
   redisClient.on('reconnecting', () => logger.info('🔄 Redis reconnecting…'));
 
-  await redisClient.connect();
   await redisClient.ping();
   return redisClient;
 }
+
 
 function getRedisClient() {
   if (!redisClient) throw new Error('Redis not initialised. Call connectRedis() first.');
